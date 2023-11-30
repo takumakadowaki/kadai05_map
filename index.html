@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Map&Geolocation Treasure Hunt Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- MapArea -->
+  <div id="view"></div>
+  <div id="myMap" style="width:50%;height:50%;"></div>
+  <!-- /MapArea -->
+
+  <!-- jQuery&GoogleMapsAPI -->
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script
+    src='https://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AnSZwGilKFsyYBTProp-gN9uSCZ0GyldRRSp2JpZLqFpuUDk3f1fDs_vNxADvCe6'
+    async defer></script>
+  <script src="js/BmapQuery.js"></script>
+  <script>
+    let map;
+
+    // 宝の位置を格納する変数
+    let treasureLocation;
+
+    function mapsInit(position) {
+      console.log(position, '取得');
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      map = new Microsoft.Maps.Map(document.getElementById('myMap'), {
+        center: new Microsoft.Maps.Location(lat, lon)
+      });
+
+      // 宝の位置をランダムに生成
+      treasureLocation = {
+        latitude: lat + (Math.random() - 0.5) / 100, // 緯度を少し変更
+        longitude: lon + (Math.random() - 0.5) / 100 // 経度を少し変更
+      };
+
+      // 宝の位置にマーカーを置く
+      var treasurePin = new Microsoft.Maps.Pushpin(
+        new Microsoft.Maps.Location(treasureLocation.latitude, treasureLocation.longitude), 
+        {title: 'Treasure'}
+      );
+      map.entities.push(treasurePin);
+
+      // 現在位置と宝の位置の距離を表示するInfobox
+      var distanceInfobox = new Microsoft.Maps.Infobox(
+        new Microsoft.Maps.Location(lat, lon), 
+        {title: 'Your Location', description: 'Find the treasure!'}
+      );
+      distanceInfobox.setMap(map);
+
+      // プレイヤーの移動を追跡するイベントリスナーを追加
+      navigator.geolocation.watchPosition(function(position) {
+        updatePlayerPosition(position, map, distanceInfobox);
+      });
+    };
+
+    // プレイヤーの位置を更新し、宝の位置との距離を計算する関数
+    function updatePlayerPosition(position, map, infobox) {
+      const playerLocation = new Microsoft.Maps.Location(
+        position.coords.latitude, 
+        position.coords.longitude
+      );
+
+      Microsoft.Maps.loadModule('Microsoft.Maps.SpatialMath', function () {
+        var distanceToTreasure = Microsoft.Maps.SpatialMath.getDistanceTo(
+          playerLocation, 
+          new Microsoft.Maps.Location(treasureLocation.latitude, treasureLocation.longitude)
+        );
+
+        infobox.setOptions({
+          location: playerLocation,
+          description: 'Distance to treasure: ' + distanceToTreasure.toFixed(2) + ' meters'
+        });
+
+        map.setView({center: playerLocation});
+      });
+    }
+
+    function mapsError(error) {
+      let e = "";
+      if (error.code == 1) {
+        e = "位置情報が許可されてません";
+      }
+      if (error.code == 2) {
+        e = "現在位置を特定できません";
+      }
+      if (error.code == 3) {
+        e = "位置情報を取得する前にタイムアウトになりました";
+      }
+      alert("エラー：" + e);
+    };
+
+    const set = {
+      enableHighAccuracy: true,
+      maximumAge: 20000,
+      timeout: 10000
+    };
+
+    function GetMap() {
+      navigator.geolocation.getCurrentPosition(mapsInit, mapsError, set);
+    }
+  </script>
+</body>
+
+</html>
