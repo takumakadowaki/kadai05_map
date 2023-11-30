@@ -62,7 +62,7 @@
       );
       distanceInfobox.setMap(map);
 
-      // プレイヤーの移動を追跡するイベントリスナーを追加
+      // プレイヤーの移動を追跡するイベントリスナーを追加です
       navigator.geolocation.watchPosition(function(position) {
         updatePlayerPosition(position, map, distanceInfobox);
       });
